@@ -5,18 +5,21 @@ require 'colorize'
 
 class CommandLineInterface
 
+  def initialize
+    @scraper = Scraper.new
+    @genres = @scraper.scrape_genres
+    @formats = @scraper.scrape_title_types
+    @selected_genres = []
+    @selected_formats = []
+  end
+
   def run
-    scraper = Scraper.new
-    genres = scraper.scrape_genres
-    formats = scraper.scrape_title_types
 
-    puts "Welcome to the CLI Entertainment Recommendation Service!"
-    puts "This program will prompt you to specify genres of entertainment media that"
-    puts "you are interested in consuming, and then scrape through the Internet Move Database"
-    puts "to give you recommendations\n."
-    puts "Here is a list of genres to choose from: "
+    main_menu
 
-    genre_map = display_fields(genres, genre_map)
+    #displaying genres available to choose from, and storing them in a hash
+    #whereby they are values mapped to numbers as keys
+
 
     puts "Enter the numbers of the genres you are interested in. When finished, press Escape."
     selected_genres = []
@@ -25,6 +28,7 @@ class CommandLineInterface
     while !proceed
       input = gets
       if input == "\e" || input == "\x1b"
+        #Escape key has been pressed, so we will proceed to choosing format types
         proceed = true
         break
       end
@@ -39,7 +43,7 @@ class CommandLineInterface
 
     puts "Here is a list of formats for you to choose from: "
     #puts "To go back, press Escape."
-    format_map = display_fields(formats, format_map)
+    format_map = display_fields(formats)
     selected_formats = []
     proceed = false
 
@@ -62,10 +66,56 @@ class CommandLineInterface
 
   end
 
-  def process_fields
-    
+  def handle_input(previous_function = main_menu)
+    input = gets.downcase
+    case input
+    when "\t"
+      #self.send(next_function)
+      yield
+    when "\b"
+      self.send(previous_function)
+    when "\e"
+      puts "Have a pleasant day!"
+      exit
+    when "m"
+      main_menu
+    else
+      return input
+    end
   end
-  def display_fields(fields, fields_map)
+
+  def main_menu
+    puts "Welcome to the CLI Entertainment Recommendation Service!"
+    puts "This program will prompt you to specify genres of entertainment media that"
+    puts "you are interested in consuming, and then scrape through the Internet Move Database"
+    puts "to give you recommendations\n."
+    puts "You may press the Escape key at any time to exit the program, or the \'m\' key to return to the main menu."
+    puts "Pressing \'b\' will take you back to the previous part of the program."
+    #puts "Press Tab to continue."
+
+    handle_input {get_genre_selection(true, @genres)}
+  end
+
+  def get_selection(is_for_genre, fields)
+    field_name = is_for_genre ? "genres" : "formats"
+    puts "Here is a list of #{field_name} to choose from: "
+    fields_map = display_fields(fields)
+    proceed = false
+
+    while !proceed
+      #if user presses tab, will
+      input = handle_input {get_selection(false, @formats)}
+
+      field_num = input.to_i
+      if field_num.between?(1, fields.size)
+        selection << genre_map[genre_num]
+      else
+        puts "Please select a valid number."
+      end
+    end
+  end
+
+  def display_fields(fields)
     count = 1
     fields_map = {}
     fields.each do |field|
