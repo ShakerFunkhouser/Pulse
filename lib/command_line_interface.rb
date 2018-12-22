@@ -11,110 +11,148 @@ class CommandLineInterface
     @formats = @scraper.scrape_title_types
     @selected_genres = []
     @selected_formats = []
+    @selected_plot_keywords = []
+    @playlist = []
+    @ordered_methods = ["main_menu", "get_genre_selection", "get_format_selection", "get_plot_keywords"]
+    @previous_method = "main_menu"
+    @current_method = "main_menu"
+    @next_method = "get_genre_selection"
+
+    @commands = [
+      Command.new("!e", "Exit program", "terminate")
+      Command.new("!n", "Complete selection/Go to next selection", "execute_next_method")
+      Command.new("!g", "Select genres", "get_genre_selection")
+      Command.new("!f", "Select formats", "get_format_selection")
+      Command.new("!p", "Select plot keywords", "get_plot_keyword_selection")
+      Command.new("!d", "Display commands", "display_commands")
+      Command.new("!b", "Go to previous selection","execute_previous_method")
+      Command.new("!m", "Start over at main_menu", "main_menu")
+    ]
+    @command_map = {}
+    @commands.each {|command| @command_map[command.keystroke] = command.function_name}
   end
 
   def run
 
     main_menu
 
-    #displaying genres available to choose from, and storing them in a hash
-    #whereby they are values mapped to numbers as keys
-
-
-    puts "Enter the numbers of the genres you are interested in. When finished, press Escape."
-    selected_genres = []
-    proceed = false
-
-    while !proceed
-      input = gets
-      if input == "\e" || input == "\x1b"
-        #Escape key has been pressed, so we will proceed to choosing format types
-        proceed = true
-        break
-      end
-
-      genre_num = input.to_i
-      if genre_num.between?(1, genres.size)
-        selected_genres << genre_map[genre_num]
-      else
-        puts "Please select a valid number."
-      end
-    end
-
-    puts "Here is a list of formats for you to choose from: "
-    #puts "To go back, press Escape."
-    format_map = display_fields(formats)
-    selected_formats = []
-    proceed = false
-
-    while !proceed
-      input = gets
-      if input == "\e" || input == "\x1b"
-        run
-        proceed = true
-        break
-      end
-
-      format_num = input.to_i
-      if format_num.between?(1, formats.size)
-        selected_formats << format_map[format_num]
-      else
-        puts "Please select a valid number."
-      end
-    end
-
+    #handle_input
 
   end
 
-  def handle_input(previous_function = main_menu)
-    input = gets.downcase
-    case input
-    when "\t"
-      #self.send(next_function)
-      yield
-    when "\b"
-      self.send(previous_function)
-    when "\e"
-      puts "Have a pleasant day!"
-      exit
-    when "m"
-      main_menu
-    else
-      return input
-    end
+  def terminate
+    exit
+  end
+
+  #at present, this method will never be called, but it may be useful in future
+  #versions of this program
+  def execute_next_method
+    self.send(@next_method)
+  end
+
+  #at present, this method will never be called, but it may be useful in future
+  #versions of this program
+  def execute_previous_method
+    self.send(@previous_method)
   end
 
   def main_menu
+    update_method_order unless
+    @selected_genres = []
+    @selected_formats = []
+    @selected_plot_keywords = []
+    @playlist = []
     puts "Welcome to the CLI Entertainment Recommendation Service!"
     puts "This program will prompt you to specify genres of entertainment media that"
     puts "you are interested in consuming, and then scrape through the Internet Move Database"
     puts "to give you recommendations\n."
-    puts "You may press the Escape key at any time to exit the program, or the \'m\' key to return to the main menu."
-    puts "Pressing \'b\' will take you back to the previous part of the program."
+    #puts "You may press the Escape key at any time to exit the program, or the \'m\' key to return to the main menu."
+    #puts "Pressing \'b\' will take you back to the previous part of the program."
     #puts "Press Tab to continue."
+    #display_selection
+    display_commands
+    get_genre_selection
 
-    handle_input {get_genre_selection(true, @genres)}
+    handle_input
   end
 
-  def get_selection(is_for_genre, fields)
-    field_name = is_for_genre ? "genres" : "formats"
+  def handle_command
+    input = gets.chomp.downcase
+    if Command.all_key_strokes.include?(input)
+      self.send(@command_map[input])
+    else
+      return input
+      #it is up to the individual methods for parameter selection
+      #to verify that this is valid input
+    end
+  end
+
+  def update_method_order(name_of_current_method)
+    index_of_current_method = @ordered_methods.index(@current_method)
+    index_of_next_method =  index_of_current_method + 1
+    if index_of_next_method == @ordered_methods.size
+      index_of_next_method = 0
+    end
+
+    @next_method = @ordered_methods[index_of_next_method]
+    @previous_method = @current_method
+    @current_method = name_of_current_method
+  end
+
+  def display_selection(fields)
+    genre_count = 1
+    puts "Genres selected: "
+    display_fields(@selected_genres)
+    puts ""
+
+    puts "Formats selected: "
+    display_fields(@selected_formats)
+    puts ""
+  end
+
+  def display_commands
+    @commands.each{|command| puts "#{command.name}: #{command.description}"}
+  end
+
+  def get_genre_selection
+    get_selection("genre", @genres)
+  end
+
+  def get_format_selection
+    get_selection("format", @formats)
+  end
+
+  def get_plot_keyword_selection
+    puts "Type in some keywords that describe the plot you are interested in."
+    input = gets.downcase
+    while !command_map.keys.include?(input)
+
+    end
+    handle_command
+  end
+
+  def get_selection(field_name, fields)
     puts "Here is a list of #{field_name} to choose from: "
     fields_map = display_fields(fields)
+    display_selection
     proceed = false
 
     while !proceed
       #if user presses tab, will
       input = handle_input {get_selection(false, @formats)}
+      break if input.is_a? String
 
       field_num = input.to_i
       if field_num.between?(1, fields.size)
-        selection << genre_map[genre_num]
+        selection << fields_map[field_num]
       else
         puts "Please select a valid number."
       end
     end
   end
 
+  #displaying fields available to choose from, and storing them in a hash
+  #whereby they are values mapped to numbers as keys
   def display_fields(fields)
     count = 1
     fields_map = {}
