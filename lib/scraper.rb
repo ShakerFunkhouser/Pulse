@@ -1,17 +1,18 @@
 require 'open-uri'
 require 'pry'
+require_relative "../lib/entertainment_product.rb"
 
 class Scraper
 
-  def self.scrape_title_types
+  def scrape_title_types
     scrape_table(0)
   end
 
-  def self.scrape_genres
+  def scrape_genres
     scrape_table(1)
   end
 
-  def self.scrape_table(table_number)
+  def scrape_table(table_number)
     table_contents = []
     search_page = "https://www.imdb.com/search/title"
     html = Nokogiri::HTML(open(search_page))
@@ -24,9 +25,12 @@ class Scraper
     table_contents
   end
 
-  def self.generate_search_url(title_types, genres=[], plot_keywords=[])
-    search_page = "https://www.imdb.com/search/title?title_type="
-    append_search_keywords_to_url(search_page, title_types)
+  def generate_search_url(title_types, genres, plot_keywords)
+    search_page = "https://www.imdb.com/search/title?"
+    if !title_types.empty?
+      search_page << "title_type="
+      append_search_keywords_to_url(search_page, title_types)
+    end
 
     if genres.size > 0
       append_search_keywords_to_url(search_page, genres)
@@ -38,14 +42,14 @@ class Scraper
     search_page
   end
 
-  def self.append_search_keywords_to_url(url, keywords)
+  def append_search_keywords_to_url(url, keywords)
     keywords.each do |keyword|
       url << "#{keyword},"
     end
     url.chomp(",")
   end
 
-  def self.scrape_user_search_url(url)
+  def scrape_user_search_url(url)
     matches = []
     search_results = ulr.css("div.lister-item-content")
     search_results.each do |search_result|
@@ -57,17 +61,17 @@ class Scraper
     matches
   end
 
-  def self.scrape_imdb_title_url(url)
+  def scrape_imdb_title_url(url)
     subtext = url.css("div.title_wrapper div.subtext")
 
-    //scraping genre names
+    #scraping genre names
     genres = []
     subtext_links = subtext.css("a")
     for i in 0..subtext_links.size - 1
       genres << subtext_links[i].text
     end
 
-    //scraping plot keywords
+    #scraping plot keywords
     plot_keywords = []
     spans = url.css("span.itemprop")
     plot_keyword_spans.each do |span|
@@ -78,7 +82,7 @@ class Scraper
       title: url.css("div#ratingWidget p strong").text,
       imdb_rating: url.css("div#ratingWidget span.rating").text,
       rating: subtext.text.strip[0],
-      runtime: subtext.css("time").text.strip
+      runtime: subtext.css("time").text.strip,
       genres: genres,
       release_date: subtext_links[subtext_links.size - 1].text,
       plot_summary: url.css("div.summary_text").text.strip,
@@ -86,7 +90,7 @@ class Scraper
     }
   end
 
-  def self.create_entertainment_product
+  def create_entertainment_product
     scraped_product = {}
     html = File.read(profile_url)
     profile_page = Nokogiri::HTML(html)

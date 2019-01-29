@@ -1,7 +1,6 @@
 require_relative "../lib/scraper.rb"
-require_relative "../lib/student.rb"
+require_relative "../lib/Command.rb"
 require 'nokogiri'
-require 'colorize'
 
 class CommandLineInterface
 
@@ -14,34 +13,81 @@ class CommandLineInterface
     @selected_plot_keywords = []
     @playlist = []
     @ordered_methods = ["main_menu", "get_genre_selection", "get_format_selection", "get_plot_keywords"]
-    @previous_method = "main_menu"
+    @previous_method = nil
     @current_method = "main_menu"
     @next_method = "get_genre_selection"
 
     @commands = [
-      Command.new("!e", "Exit program", "terminate")
-      Command.new("!n", "Complete selection/Go to next selection", "execute_next_method")
-      Command.new("!g", "Select genres", "get_genre_selection")
-      Command.new("!f", "Select formats", "get_format_selection")
-      Command.new("!p", "Select plot keywords", "get_plot_keyword_selection")
-      Command.new("!d", "Display commands", "display_commands")
-      Command.new("!b", "Go to previous selection","execute_previous_method")
-      Command.new("!m", "Start over at main_menu", "main_menu")
+      Command.new("-e", "Exit program", "terminate"),
+      Command.new("-n", "Complete selection/Go to next selection", "execute_next_method"),
+      Command.new("-g", "Select genres", "get_genre_selection"),
+      Command.new("-f", "Select formats", "get_format_selection"),
+      Command.new("-p", "Select plot keywords", "get_plot_keyword_selection"),
+      Command.new("-d", "Display commands", "display_commands"),
+      Command.new("-b", "Go to previous selection","execute_previous_method"),
+      Command.new("-m", "Start over at main_menu", "main_menu"),
+      Command.new("-s", "Get matching titles", "get_matches")
     ]
     @command_map = {}
-    @commands.each {|command| @command_map[command.keystroke] = command.function_name}
+    @commands.each {|command| @command_map[command.name] = command.function_name}
   end
 
   def run
 
     main_menu
 
-    #handle_input
+    #handle_input(false) {puts "Please enter a valid command."}
 
   end
 
   def terminate
     exit
+  end
+
+  def get_matches
+    if self.sufficient_params?
+      url = @scraper.generate_search_url(@selected_formats, @selected_genres, @selected_plot_keywords)
+      @playlist = @scraper.scrape_user_search_url(url)
+      puts "Here are your matches: "
+      for match in @playlist
+        match.each do |key, value|
+          puts "#{key}: #{value}"
+        end
+        puts ""
+      end
+    else
+      puts "Must have at least parameter before launching a search."
+    end
+  end
+
+  def sufficient_params?
+    !(@selected_genres.empty? && @selected_formats.empty? && @selected_plot_keywords.empty?)
+  end
+
+  def get_selection(selection_type, selection, choices = nil)
+    puts "Here is your current selection for #{selection_type}:"
+    display_fields(selection)
+    if choices != nil
+      puts "Here are some #{selection_type} to choose from: "
+      display_fields(choices)
+    end
+
+    #puts "Type in as many choices as you like. When finished enter /'-n/', or enter another available command."
+    choice = handle_input(true) #if  user enters command indicating selection of
+    #different method, the remainder of this method will not be executed;
+    #otherwise, the input given pertains to this selection type
+
+    if choices != nil && !choices.include?(choice)
+      #if choices were supplied, and the choice is not among the choices
+      #available, give error message:
+      puts "Please choose from one of the #{selection_type} available."
+    elsif choice != nil
+      selection.push(choice)
+      #only add this choice to selection if it is not nil, as would be expected
+      #if invoking another command
+    end
+    get_selection(selection_type, selection, choices) if choice != nil
+
   end
 
   #at present, this method will never be called, but it may be useful in future
@@ -57,37 +103,50 @@ class CommandLineInterface
   end
 
   def main_menu
-    update_method_order unless
     @selected_genres = []
     @selected_formats = []
     @selected_plot_keywords = []
     @playlist = []
     puts "Welcome to the CLI Entertainment Recommendation Service!"
-    puts "This program will prompt you to specify genres of entertainment media that"
+    puts
+    puts "This program will prompt you to specify genres and plot details of entertainment media that"
     puts "you are interested in consuming, and then scrape through the Internet Move Database"
-    puts "to give you recommendations\n."
+    puts "to give you recommendations."
+    puts
     #puts "You may press the Escape key at any time to exit the program, or the \'m\' key to return to the main menu."
     #puts "Pressing \'b\' will take you back to the previous part of the program."
     #puts "Press Tab to continue."
     #display_selection
     display_commands
-    get_genre_selection
+    #get_genre_selection
 
-    handle_input
+    handle_input(false)
   end
 
-  def handle_command
-    input = gets.chomp.downcase
-    if Command.all_key_strokes.include?(input)
-      self.send(@command_map[input])
-    else
+  def display_commands
+    @commands.each{|command| puts "#{command.name}: #{command.description}"}
+  end
+
+  def handle_input(expecting_return, provided_input = nil)
+    input = gets.chomp.downcase if provided_input == nil
+    if Command.all_names.include?(input)
+      chosen_method = @command_map[input]
+      if @ordered_methods.include?(chosen_method)
+        update_method_order(@current_method, chosen_method)
+      end
+      self.send(chosen_method)
+    elsif expecting_return
       return input
       #it is up to the individual methods for parameter selection
       #to verify that this is valid input
+    else
+      puts "Please input a valid command."
     end
   end
 
-  def update_method_order(name_of_current_method)
+  def update_method_order(name_of_previous_method, name_of_current_method)
+    @previous_method = name_of_previous_method
+    @current_method = name_of_current_method
     index_of_current_method = @ordered_methods.index(@current_method)
     index_of_next_method =  index_of_current_method + 1
     if index_of_next_method == @ordered_methods.size
@@ -95,98 +154,34 @@ class CommandLineInterface
     end
 
     @next_method = @ordered_methods[index_of_next_method]
-    @previous_method = @current_method
-    @current_method = name_of_current_method
-  end
-
-  def display_selection(fields)
-    genre_count = 1
-    puts "Genres selected: "
-    display_fields(@selected_genres)
-    puts ""
-
-    puts "Formats selected: "
-    display_fields(@selected_formats)
-    puts ""
-  end
-
-  def display_commands
-    @commands.each{|command| puts "#{command.name}: #{command.description}"}
   end
 
   def get_genre_selection
-    get_selection("genre", @genres)
+    get_selection("genres", @selected_genres, @genres)
   end
 
   def get_format_selection
-    get_selection("format", @formats)
+    get_selection("formats", @selected_formats, @formats)
   end
 
   def get_plot_keyword_selection
     puts "Type in some keywords that describe the plot you are interested in."
-    input = gets.downcase
-    while !command_map.keys.include?(input)
-
-    end
-    handle_command
+    get_selection("plot keywords", @selected_plot_keywords, @plot_keywords)
   end
 
-  def get_selection(field_name, fields)
-    puts "Here is a list of #{field_name} to choose from: "
-    fields_map = display_fields(fields)
-    display_selection
-    proceed = false
 
-    while !proceed
-      #if user presses tab, will
-      input = handle_input {get_selection(false, @formats)}
-      break if input.is_a? String
-
-      field_num = input.to_i
-      if field_num.between?(1, fields.size)
-        selection << fields_map[field_num]
-      else
-        puts "Please select a valid number."
-      end
-    end
-  end
 
   #displaying fields available to choose from, and storing them in a hash
   #whereby they are values mapped to numbers as keys
   def display_fields(fields)
-    count = 1
-    fields_map = {}
-    fields.each do |field|
-      print "#{count}. #{field} "
-      genre_map[count] = genre
+    size = fields.size
+    for i in 0..size
+      print "#{fields[i]}"
+      print ", " if i < size - 1
     end
-    fields_map
+    puts
   end
 
-  def make_students
-    students_array = Scraper.scrape_index_page(BASE_PATH + 'index.html')
-    Student.create_from_collection(students_array)
-  end
 
-  def add_attributes_to_students
-    Student.all.each do |student|
-      attributes = Scraper.scrape_profile_page(BASE_PATH + student.profile_url)
-      student.add_student_attributes(attributes)
-    end
-  end
-
-  def display_students
-    Student.all.each do |student|
-      puts "#{student.name.upcase}".colorize(:blue)
-      puts "  location:".colorize(:light_blue) + " #{student.location}"
-      puts "  profile quote:".colorize(:light_blue) + " #{student.profile_quote}"
-      puts "  bio:".colorize(:light_blue) + " #{student.bio}"
-      puts "  twitter:".colorize(:light_blue) + " #{student.twitter}"
-      puts "  linkedin:".colorize(:light_blue) + " #{student.linkedin}"
-      puts "  github:".colorize(:light_blue) + " #{student.github}"
-      puts "  blog:".colorize(:light_blue) + " #{student.blog}"
-      puts "----------------------".colorize(:green)
-    end
-  end
 
 end

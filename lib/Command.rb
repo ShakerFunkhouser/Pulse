@@ -10,4 +10,8 @@ class Command
     @@all << self
     @@all_names << name
   end
+
+  def self.all_names
+    @@all_names
+  end
 end
