@@ -1,15 +1,14 @@
 class Command
-  attr_reader :entry, :description, :function_name, :progresses?
+  attr_reader :entry, :description, :function_name
   @@all = []
   @@all_entries = []
 
-  def initialize(entry, description, function_name, progresses?)
+  def initialize(entry, description, function_name)
     @entry = entry
     @description = description
     @function_name = function_name
-    @progresses? = progresses?
     @@all << self
-    @@all_entry << entry
+    @@all_entries << entry
   end
 
   def self.all_entries

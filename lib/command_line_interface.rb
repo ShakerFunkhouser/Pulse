@@ -74,15 +74,18 @@ class CommandLineInterface
     @commands.each{|command| puts "#{command.entry}: #{command.description}"}
   end
 
-  def handle_input(expecting_return?, provided_input = nil)
+  def handle_input(expecting_return, provided_input = nil)
     #if no input is provided, get input from user, remove whitespace,
     #and put it in lowercase
+    binding.pry
     input = gets.chomp.downcase if provided_input == nil
 
     #if the input given is a valid command, update which methods are
-    #current, previous and next, and execute the function associated
+    #current, preious and next, and execute the function associated
     #with the command
-    if Command.all_names.include?(input)
+
+    if Command.all_entries.include?(input)
+
       chosen_method = @command_map[input]
       #only update which methods are previous, current and next if this method
       #affects the user's selection of parameters for search of entertainment media;
@@ -94,7 +97,7 @@ class CommandLineInterface
       end
       #execute the function mapped to the valid command input
       self.send(chosen_method)
-    elsif expecting_return?
+    elsif expecting_return
       #if the user has not input a command, and this function has been called
       #in one of the ordered methods (which affects user input) as expecting a return,
       #the user is providing a parameter in the eventual search, and must be returned
@@ -156,10 +159,11 @@ class CommandLineInterface
       display_fields(choices)
     end
 
+    puts
     puts "Please enter as many search parameters as you wish."
-    puts "To undo your most recent addition, enter \"!u\"."
-    puts "To delete any previous choices for search paramters, enter \"!x\"."
-    puts "When finished, enter \"!n\" or a different command.\n"
+    puts "To undo your most recent addition, enter !u.\n"
+    puts "To delete any previous choices for search paramters, enter !x."
+    puts "When finished, enter \"!n\" or a different command."
 
     #collect input from user
     input = gets.chomp.downcase
@@ -169,7 +173,7 @@ class CommandLineInterface
 
     #until the user gives a command that is not the "display commands" command,
     #continue collecting new search parameters
-    until Command.all_names.include?(input) && input != "!d"
+    until Command.all_entries.include?(input) && input != "!d"
       #if the user gives the command to undo the most recent search parameter,
       #first check that at least one such parameter has already been given,
       #then remove the most recent searh parameter added
@@ -189,7 +193,7 @@ class CommandLineInterface
         delete_choices_from_selection(selection)
       #below this point, the user has given an input that is not a command, and
       #hence wishes to include it as a search parameter
-      elsif choices != nil && !choices.include?(choice)
+    elsif choices != nil && !choices.include?(input)
         #if choices were supplied, and the input given is not among the choices
         #available, give error message:
         puts "Please choose from one of the #{selection_type} available."
@@ -203,7 +207,6 @@ class CommandLineInterface
       else
         #input given is not a command, and is nil
         puts "Please enter a valid input."
-        end
       end
 
       input = gets.chomp.downcase
@@ -222,16 +225,16 @@ class CommandLineInterface
     if relevant_selection.size == 0
       puts "There are no choices to delete."
     else
-      puts "Please select the numbers corresponding to the search parameters you would like to delete."
-      pust "To undo the most recent deletion, enter \"!u\"."
-      puts "When finished, enter \"!n\" or a different command."
+      puts "\nPlease select the numbers corresponding to the search parameters you would like to delete.\n"
+      pust "\nTo undo the most recent deletion, enter \"!u\"."
+      puts "When finished, enter \"!n\" or a different command.\n"
       input = gets.chomp.downcase
       #this variable will store the most recently deleted search parameter,
       #in case the user wishes to reverse this decision immediately after
       most_recent_deletion = nil
 
       #until the user gives a command to continue, or a different command
-      until Command.all_names.include?(input) && input != "!d"
+      until Command.all_entries.include?(input) && input != "!d"
         if input == "!u"
           if most_recent_deletion == nil
             puts "No deletions to undue."
@@ -253,6 +256,7 @@ class CommandLineInterface
       end
 
       handle_input(false, input)
+    end
   end
 
   def delete_particular_selection

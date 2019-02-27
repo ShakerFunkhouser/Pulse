@@ -19,7 +19,7 @@ class Scraper
     table = html.css("div.inputs table")[table_number].css("tbody tr td label")
 
     table.each do |cell|
-      table_contents << cell.text
+      table_contents << cell.text.downcase
     end
 
     table_contents
