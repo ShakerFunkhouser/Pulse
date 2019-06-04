@@ -1,8 +1,8 @@
 # Pulse
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/Pulse`. To experiment with that code, run `bin/console` for an interactive prompt.
-
-TODO: Delete this and the text above, and describe your gem
+Welcome to Pulse! This project provides a CLI that allows the user to specify
+details of entertainment media they are interested in consuming. The program
+then scrapes the Internet Movie Database (IMDB) for recommendations.
 
 ## Installation
 
@@ -22,7 +22,9 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+Follow the prompts to give parameters for recommendations. At any time, enter !d
+to get a list of commands you can enter, !m to restart at the main menu, or !e
+to exit the program.
 
 ## Development
 

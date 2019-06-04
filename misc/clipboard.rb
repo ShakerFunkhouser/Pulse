@@ -1,3 +1,45 @@
+def handle_input
+  #if returning_user_input, this method returns formatted input given by user pertaining
+  #to search paramters; this method may also return the name of a method, in which case
+  #returning_user_input would be false
+
+  #if no input is provided, get input from user, remove whitespace,
+  #and put it in lowercase
+  #input = (provided_input == nil) ? gets.chomp.downcase : provided_input
+  input = gets.chomp.downcase
+
+  #if the input given is a valid command, update which methods are
+  #current, preious and next, and execute the function associated
+  #with the command
+  if input == "!d"
+    display_commands
+    #handle_input(false)
+  elsif Command.all_entries.include?(input)
+    #if the input given is a valid command, return the method associated with it
+    chosen_method = nil
+    #ostensibly_chosen_method = @command_map[input]
+    #chosen_method = ostensibly_chosen_method
+
+    #in order to convey user through ordered methods, must label previous
+    #or next methods as the names of the intended previous or next methods
+    #if ostensibly_chosen_method == "execute_previous_method"
+
+
+    return chosen_method
+  elsif returning_user_input
+    #if the user has not input a command, and this function has been called
+    #in one of the ordered methods (which affects user input) as expecting a return,
+    #the user is providing a parameter in the eventual search, and must be returned
+    return input
+    #it is up to the individual methods for parameter selection
+    #to verify that this is valid input
+  else
+    #the method calling this function is not expecting a return, and a valid
+    #command has not been entered
+    puts "Please input a valid command."
+  end
+end
+
 def update_method_order_2(name_of_previous_method, name_of_current_method)
   index_of_current_method = @ordered_methods.index(@current_method)
   index_of_next_method =  index_of_current_method + 1
