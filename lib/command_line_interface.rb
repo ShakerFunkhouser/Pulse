@@ -5,7 +5,7 @@ require 'nokogiri'
 require 'pry'
 
 class CommandLineInterface
-  attr_accessor :genres, :formats
+  attr_accessor :selected_genres, :selected_formats, :selected_plot_keywords
 
   def initialize
     #create new Scraper, and store the names of genres and formats (title types)
@@ -105,7 +105,7 @@ class CommandLineInterface
     else
       #reset current command
       @current_command = nil
-      
+
       #inform user that a valid command has not been entered
       puts "Please enter a valid command."
     end
@@ -281,7 +281,9 @@ class CommandLineInterface
     item_affected = most_recent_change.item
     is_addition = most_recent_change.is_addition
     selection_name = most_recent_change.selection_name
-    selection = self.send(selection_name)
+    method_name = "selected_"
+    method_name << selection_name.tr(" ", "_")
+    selection = self.send(method_name)
 
     if (is_addition && !is_undo) || (!is_addition && is_undo)
       #if redoing an addition, or undoing a deletion, add the item_affected to the selection
