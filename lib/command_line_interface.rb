@@ -286,6 +286,13 @@ class CommandLineInterface
     #that will add this operation so it will later be undoable or redoable
     operations = is_undo ? @undo_operations : @redo_operations
     opposite_operations = !is_undo ? @undo_operations : @redo_operations
+
+    #if there are no changes to undo or redo, indicate this to the user
+    if operations.empty?
+      prefix = is_undo ? "un" : "re"
+      puts "No changes to #{prefix}do."
+      return
+    end
     #store information relevant to operation being invoked for easy access:
     most_recent_change = operations.last
     item_affected = most_recent_change.item
