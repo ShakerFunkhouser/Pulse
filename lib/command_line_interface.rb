@@ -47,6 +47,7 @@ class CommandLineInterface
       #Command.new("!u", "Undue most recent change", nil, true),
       #Command.new("!d", "Display commands", "display_commands", true),
       Command.new("!m", "Start over at main_menu", "main_menu"),
+      Command.new("!a", "View all matches ever collected", "view_all_matches_ever")
     ]
 
     #storing command inputs as the keys to a hash whose values are their corresponding
@@ -269,6 +270,21 @@ class CommandLineInterface
     puts
 
     #get_matches
+  end
+
+  def view_all_matches_ever
+    all_matches = EntertainmentProduct.all
+
+    if all_matches.empty?
+      puts "No matches yet collected."
+    else
+      all_matches.each do |match|
+        match.instance_variable_hash.each do |key, value|
+          puts "#{key.to_s.tr("_", " ")}: #{value}"
+        end
+        puts
+      end      
+    end
   end
 
   def effect_change(is_undo)

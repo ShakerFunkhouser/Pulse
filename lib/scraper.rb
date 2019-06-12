@@ -67,6 +67,7 @@ class Scraper
   end
 
   def append_search_keywords_to_url(url, keywords, are_title_types, space_replacer)
+
     keywords.each do |keyword|
       search_keyword = keyword
       #if these are title types (formats), get the search value
@@ -75,6 +76,7 @@ class Scraper
       #replace spaces and dashes with "_"
       url << "#{search_keyword = keyword.tr(" ", space_replacer)},"
     end
+
     url.chomp(",")
   end
 
