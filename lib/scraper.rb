@@ -1,8 +1,3 @@
-require 'nokogiri'
-require 'open-uri'
-require 'pry'
-require_relative "../lib/entertainment_product.rb"
-
 class Scraper
 
   attr_accessor :genres, :formats, :format_text_and_search_value_hash

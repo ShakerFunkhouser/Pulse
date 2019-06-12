@@ -1,9 +1,3 @@
-require_relative "../lib/scraper.rb"
-require_relative "../lib/command.rb"
-require_relative "../lib/change.rb"
-require 'nokogiri'
-require 'pry'
-
 class CommandLineInterface
   attr_accessor :selected_genres, :selected_formats, :selected_plot_keywords
 
@@ -283,7 +277,7 @@ class CommandLineInterface
           puts "#{key.to_s.tr("_", " ")}: #{value}"
         end
         puts
-      end      
+      end
     end
   end
 
